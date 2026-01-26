@@ -38,10 +38,7 @@ npm run dev  # runs with --watch for auto-reload
 
 ## Screenshot
 
-| Port | Agent | Branch |
-|------|-------|--------|
-| localhost:3000 | auckland | main |
-| localhost:3847 | seville | localhost-tracker |
+![Locohost Screenshot](./screenshot.png)
 
 ## License
 
