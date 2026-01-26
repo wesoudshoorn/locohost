@@ -1,0 +1,13 @@
+{
+  "name": "locohost",
+  "version": "1.0.0",
+  "description": "Locohost - Track and manage localhost dev servers",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": ["localhost", "process", "tracker"],
+  "license": "MIT"
+}
