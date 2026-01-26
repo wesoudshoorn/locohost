@@ -1,7 +1,7 @@
 # Locohost
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/wesoudshoorn/workspace-overview/wesoudshoorn/localhost-tracker/logo.svg" alt="Locohost" width="300">
+  <img src="./logo.svg" alt="Locohost" width="300">
 </p>
 
 A browser-based utility to track and manage localhost dev servers.
