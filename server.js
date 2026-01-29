@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 const execAsync = promisify(exec);
-const PORT = 3847;
+const PORT = process.env.CONDUCTOR_PORT || process.env.PORT || 3847;
 
 // Conductor database path (optional integration)
 const CONDUCTOR_DB = path.join(
