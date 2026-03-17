@@ -1,14 +1,67 @@
 {
   "name": "locohost",
-  "version": "1.0.0",
-  "description": "Locohost - Track and manage localhost dev servers",
-  "main": "server.js",
+  "version": "2.1.0",
+  "description": "Locohost - macOS menubar utility for tracking dev servers and system health",
+  "main": "main.js",
   "type": "module",
   "scripts": {
     "setup": "node setup.js",
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "electron": "electron .",
+    "electron:dev": "NODE_ENV=development electron .",
+    "install-agent": "bash install/install.sh",
+    "uninstall-agent": "bash install/uninstall.sh",
+    "icon": "node scripts/generate-app-icon.js",
+    "dist": "npm run icon && electron-builder --mac && codesign --deep --force --sign - --entitlements build/entitlements.mac.plist dist/mac-universal/Locohost.app",
+    "dist:universal": "npm run icon && electron-builder --mac --universal && codesign --deep --force --sign - --entitlements build/entitlements.mac.plist dist/mac-universal/Locohost.app",
+    "test": "node --test 'test/*.test.js'"
   },
-  "keywords": ["localhost", "process", "tracker"],
+  "dependencies": {
+    "menubar": "^9.5.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.locohost.app",
+    "productName": "Locohost",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "identity": null,
+      "target": [
+        { "target": "dmg", "arch": ["universal"] },
+        { "target": "zip", "arch": ["universal"] }
+      ]
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "server.js",
+      "setup.js",
+      "lib/**/*",
+      "ui/**/*",
+      "install/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "ui/icons/", "to": "icons" }
+    ],
+    "dmg": {
+      "title": "Locohost",
+      "iconSize": 80,
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
+    }
+  },
+  "keywords": ["localhost", "process", "tracker", "menubar", "macos", "health"],
   "license": "MIT"
 }
