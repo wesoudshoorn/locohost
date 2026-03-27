@@ -27,12 +27,12 @@ header {
   display: flex;
   justify-content: center;
   margin-bottom: 12px;
-  padding: 4px 0 2px;
+  padding: 16px 0 10px;
   -webkit-app-region: drag;
 }
 
 .logo-img {
-  width: 140px;
+  width: 260px;
   height: auto;
   opacity: 1;
   filter: brightness(1);
