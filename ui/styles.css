@@ -218,7 +218,6 @@ header {
   background: #22c55e;
 }
 
-.conductor-badge.initializing .dot { background: #f59e0b; }
 
 /* Empty / Loading states */
 .empty {

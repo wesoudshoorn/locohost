@@ -121,9 +121,9 @@ function renderDev() {
   });
 
   container.innerHTML = Object.entries(groups).map(([workspace, procs]) => {
-    const conductorProc = procs.find(p => p.workspaceId);
-    const conductorBadge = conductorProc
-      ? `<span class="conductor-badge ${conductorProc.workspaceState === 'initializing' ? 'initializing' : ''}"><span class="dot"></span>Conductor</span>`
+    const isConductor = procs.some(p => p.isConductor);
+    const conductorBadge = isConductor
+      ? `<span class="conductor-badge"><span class="dot"></span>Conductor</span>`
       : '';
     const shortWorkspace = workspace.split('/').pop() || workspace;
     const pids = procs.map(p => p.pid).join(',');
