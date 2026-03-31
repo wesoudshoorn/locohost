@@ -5,6 +5,7 @@ body {
   background: #1a1a1a;
   color: #fff;
   padding: 0;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-app-region: no-drag;
@@ -111,6 +112,30 @@ header {
   margin-bottom: 4px;
   display: flex;
   align-items: center;
+}
+
+/* Stale containers */
+.stale-group {
+  opacity: 0.6;
+  border-color: rgba(255, 165, 0, 0.15);
+}
+.stale-title {
+  justify-content: space-between;
+}
+.stale-count {
+  font-weight: 400;
+  font-size: 11px;
+  color: rgba(255, 165, 0, 0.7);
+  margin-left: 6px;
+  flex: 1;
+}
+.stop-all-stale {
+  font-size: 11px;
+  color: rgba(255, 165, 0, 0.8);
+  margin-left: auto;
+}
+.stop-all-stale:hover {
+  color: #ff9500;
 }
 
 /* Rows */
