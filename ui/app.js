@@ -12,10 +12,30 @@ const ICONS = {
   system: '<svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
 };
 
-// Determine API base (works both in Electron file:// and standalone server)
-const API_BASE = window.location.protocol === 'file:'
-  ? `http://localhost:${window.locohost?.port || 3847}`
-  : '';
+// Determine API base
+// In Tauri (tauri:// or https://tauri.localhost), we need the full localhost URL
+// In Electron (file://), we need the full localhost URL
+// In standalone server mode, use relative paths
+let API_BASE = '';
+const apiBaseReady = (async function initApiBase() {
+  const proto = window.location.protocol;
+  const host = window.location.hostname;
+  const isTauri = proto === 'tauri:' || host === 'tauri.localhost' || window.__TAURI__;
+
+  if (isTauri) {
+    if (window.__TAURI__) {
+      try {
+        const port = await window.__TAURI__.core.invoke('get_port_cmd');
+        API_BASE = `http://localhost:${port}`;
+        return;
+      } catch { /* fall through */ }
+    }
+    // Tauri but __TAURI__ global not available or invoke failed
+    API_BASE = 'http://localhost:3847';
+  } else if (proto === 'file:') {
+    API_BASE = `http://localhost:${window.locohost?.port || 3847}`;
+  }
+})();
 
 // Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
@@ -33,11 +53,13 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// Dynamic window sizing — tell Electron to resize based on content
+// Dynamic window sizing — tell Tauri/Electron to resize based on content
 function resizeWindow() {
   requestAnimationFrame(() => {
     const height = document.body.scrollHeight;
-    if (window.locohost?.resize) {
+    if (window.__TAURI__) {
+      window.__TAURI__.core.invoke('resize_window', { height });
+    } else if (window.locohost?.resize) {
       window.locohost.resize(height);
     }
   });
@@ -266,9 +288,33 @@ function renderDocker() {
     return;
   }
 
-  html += '<div class="workspace-group">';
-  html += '<div class="workspace-title">Running Containers</div>';
-  for (const c of dockerData.containers) {
+  const active = dockerData.containers.filter(c => c.workspaceState !== 'archived');
+  const stale = dockerData.containers.filter(c => c.workspaceState === 'archived');
+
+  if (active.length > 0) {
+    html += '<div class="workspace-group">';
+    html += '<div class="workspace-title">Running Containers</div>';
+    html += renderContainerRows(active);
+    html += '</div>';
+  }
+
+  if (stale.length > 0) {
+    html += '<div class="workspace-group stale-group">';
+    html += `<div class="workspace-title stale-title">Stale <span class="stale-count">${stale.length} from archived workspaces</span><button class="action stop-all-stale" onclick="event.stopPropagation();stopAllStale()">stop all</button></div>`;
+    html += renderContainerRows(stale);
+    html += '</div>';
+  }
+
+  if (active.length === 0 && stale.length === 0) {
+    html += `<div class="empty">${ICONS.docker}No containers running<div class="empty-hint">Docker is ready but no containers are active</div></div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderContainerRows(containers) {
+  let html = '';
+  for (const c of containers) {
     const ports = extractDockerPorts(c.ports);
     const portLabel = ports.length > 0 ? `:${ports[0]}` : '';
     html += `
@@ -286,9 +332,7 @@ function renderDocker() {
       </div>
     `;
   }
-  html += '</div>';
-
-  container.innerHTML = html;
+  return html;
 }
 
 // ── Helpers ──
@@ -349,7 +393,9 @@ function truncateImage(image) {
 // ── Actions ──
 
 function openInBrowser(url) {
-  if (window.locohost?.openExternal) {
+  if (window.__TAURI__) {
+    window.__TAURI__.core.invoke('open_external', { url });
+  } else if (window.locohost?.openExternal) {
     window.locohost.openExternal(url);
   } else {
     window.open(url, '_blank');
@@ -463,6 +509,19 @@ async function stopContainer(containerId) {
   }
 }
 
+async function stopAllStale() {
+  const stale = (dockerData.containers || []).filter(c => c.workspaceState === 'archived');
+  if (stale.length === 0) return;
+  toast(`Stopping ${stale.length} stale...`);
+  for (const c of stale) {
+    try {
+      await fetch(`${API_BASE}/api/docker/stop/${c.id}`, { method: 'POST' });
+    } catch { /* continue */ }
+  }
+  toast(`Stopped ${stale.length} containers`);
+  setTimeout(loadDocker, 1000);
+}
+
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -545,9 +604,11 @@ setInterval(() => {
 }, 60000); // Update every minute
 
 // ── Initial load ──
-loadProcesses();
-loadHealth();
-loadDocker();
+apiBaseReady.then(() => {
+  loadProcesses();
+  loadHealth();
+  loadDocker();
+});
 
 // Auto-refresh
 setInterval(() => {
@@ -563,3 +624,4 @@ window.copyPort = copyPort;
 window.confirmKill = confirmKill;
 window.confirmStopContainer = confirmStopContainer;
 window.killAll = killAll;
+window.stopAllStale = stopAllStale;
