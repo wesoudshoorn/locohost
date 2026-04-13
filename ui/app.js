@@ -54,14 +54,17 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // Dynamic window sizing — tell Tauri/Electron to resize based on content
+// Double-rAF ensures layout is computed before measuring scrollHeight
 function resizeWindow() {
   requestAnimationFrame(() => {
-    const height = document.body.scrollHeight;
-    if (window.__TAURI__) {
-      window.__TAURI__.core.invoke('resize_window', { height });
-    } else if (window.locohost?.resize) {
-      window.locohost.resize(height);
-    }
+    requestAnimationFrame(() => {
+      const height = document.body.scrollHeight;
+      if (window.__TAURI__) {
+        window.__TAURI__.core.invoke('resize_window', { height });
+      } else if (window.locohost?.resize) {
+        window.locohost.resize(height);
+      }
+    });
   });
 }
 
@@ -604,18 +607,17 @@ setInterval(() => {
 }, 60000); // Update every minute
 
 // ── Initial load ──
-apiBaseReady.then(() => {
-  loadProcesses();
-  loadHealth();
-  loadDocker();
-});
+
+async function loadAll() {
+  await Promise.all([loadProcesses(), loadHealth(), loadDocker()]);
+}
+
+apiBaseReady.then(() => loadAll());
 
 // Auto-refresh
-setInterval(() => {
-  loadProcesses();
-  loadHealth();
-  loadDocker();
-}, 10000);
+apiBaseReady.then(() => {
+  setInterval(() => loadAll(), 10000);
+});
 
 // Expose for global onclick handlers
 window.killProc = killProc;
