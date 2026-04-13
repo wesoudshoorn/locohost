@@ -21,6 +21,6 @@ const server = createAPIServer({
 });
 
 listen(server, PORT).then(() => {
-  console.log(`\n  Locohost v2.1.0 running at:\n`);
+  console.log(`\n  Locohost v3.0.0 running at:\n`);
   console.log(`  → http://localhost:${PORT}\n`);
 });
