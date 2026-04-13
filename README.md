@@ -28,15 +28,6 @@
 
 ## Install
 
-**Homebrew:**
-
-```bash
-brew tap wesoudshoorn/locohost
-brew install --cask locohost
-```
-
-**Download:**
-
 Grab the latest DMG from [GitHub Releases](https://github.com/wesoudshoorn/locohost/releases).
 
 > First launch: right-click the app → Open (unsigned builds require this once).
