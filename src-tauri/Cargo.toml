@@ -16,6 +16,7 @@ serde_json = "1"
 reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["process", "time"] }
 open = "5.3.3"
+url = "2"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

@@ -30,7 +30,9 @@
 
 Grab the latest DMG from [GitHub Releases](https://github.com/wesoudshoorn/locohost/releases).
 
-> First launch: right-click the app → Open (unsigned builds require this once).
+> **First launch:** macOS may say the app is "damaged" (it's not signed with a $99 Apple Developer ID). Fix it once in Terminal:
+>
+>     xattr -cr /Applications/Locohost.app
 
 ---
 

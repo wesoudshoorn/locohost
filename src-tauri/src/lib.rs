@@ -37,6 +37,39 @@ fn project_dir() -> PathBuf {
     env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
 }
 
+/// Resolve the full path to `node`.
+/// macOS GUI apps don't inherit the user's shell PATH, so `Command::new("node")`
+/// won't find Homebrew/NVM/fnm-installed Node. We check common locations first,
+/// then fall back to asking a login shell.
+fn find_node() -> Option<String> {
+    let candidates = [
+        "/opt/homebrew/bin/node",       // Homebrew (Apple Silicon)
+        "/usr/local/bin/node",          // Homebrew (Intel) / manual installs
+        "/usr/bin/node",                // system node (rare)
+    ];
+
+    for path in &candidates {
+        if std::path::Path::new(path).exists() {
+            return Some(path.to_string());
+        }
+    }
+
+    // Ask a login shell for the real PATH (catches NVM, fnm, mise, etc.)
+    if let Ok(output) = Command::new("/bin/zsh")
+        .args(["-lc", "which node"])
+        .output()
+    {
+        if output.status.success() {
+            let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !path.is_empty() && std::path::Path::new(&path).exists() {
+                return Some(path);
+            }
+        }
+    }
+
+    None
+}
+
 fn start_node_server(port: u16) -> Option<Child> {
     let dir = project_dir();
     let server_js = dir.join("server.js");
@@ -46,7 +79,18 @@ fn start_node_server(port: u16) -> Option<Child> {
         return None;
     }
 
-    match Command::new("node")
+    let node = match find_node() {
+        Some(path) => {
+            println!("Found node at: {}", path);
+            path
+        }
+        None => {
+            eprintln!("node not found — is Node.js installed?");
+            return None;
+        }
+    };
+
+    match Command::new(&node)
         .arg(&server_js)
         .env("PORT", port.to_string())
         .current_dir(&dir)
@@ -111,6 +155,25 @@ pub fn run() {
             let child = start_node_server(port);
             let state = app.state::<ServerProcess>();
             *state.0.lock().unwrap() = child;
+
+            // Navigate webview to the Node server (same-origin = no CORS/mixed-content issues)
+            // Poll until the server is ready, then redirect
+            let app_handle = app.handle().clone();
+            let nav_port = port;
+            tauri::async_runtime::spawn(async move {
+                let url = format!("http://localhost:{}", nav_port);
+                for _ in 0..40 {
+                    if let Ok(resp) = reqwest::get(&format!("{}/api/health", url)).await {
+                        if resp.status().is_success() {
+                            if let Some(window) = app_handle.get_webview_window("main") {
+                                let _ = window.navigate(url::Url::parse(&url).unwrap());
+                            }
+                            break;
+                        }
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                }
+            });
 
             // Hide dock icon — we're a menubar app
             #[cfg(target_os = "macos")]
