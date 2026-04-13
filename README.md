@@ -15,6 +15,17 @@
 
 ---
 
+<p align="center">
+  <img src="./screenshots/servers.png" alt="Dev Servers" width="280">
+  <img src="./screenshots/health.png" alt="Health" width="280">
+</p>
+<p align="center">
+  <img src="./screenshots/docker.png" alt="Docker" width="280">
+  <img src="./screenshots/system.png" alt="System" width="280">
+</p>
+
+---
+
 ## Install
 
 **Homebrew:**
@@ -73,7 +84,7 @@ Locohost integrates with [Conductor](https://conductor.build) to group servers b
 ```bash
 npm run setup      # Install deps, generate icons, create log dirs
 npm run dev        # Web server with hot reload → http://localhost:3847
-npm run electron   # Menubar app
+npm run tauri:dev  # Menubar app (requires Rust toolchain)
 ```
 
 ## Auto-Start on Login
@@ -86,17 +97,16 @@ npm run uninstall-agent  # Remove it
 ## Build
 
 ```bash
-npm run dist             # Build universal DMG
+npm run dist             # Build .app + .dmg
 ```
 
 ---
 
 ## Stack
 
-- **Zero runtime dependencies** — vanilla Node.js + Electron menubar
+- **Zero runtime dependencies** — vanilla Node.js + Tauri menubar (~15MB app)
 - macOS-native tray icon with health status (green/amber/red)
 - Uses `lsof`, `ps`, `pmset` for system data — no daemons, no kernel extensions
-- Reads Conductor SQLite DB for workspace metadata (optional, graceful fallback)
 - Alert suppression with 2-hour window + re-alert on worsening
 
 ## License

@@ -1,6 +1,6 @@
 {
   "name": "locohost",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Locohost - macOS menubar utility for tracking dev servers and system health",
   "type": "module",
   "scripts": {
